@@ -60,7 +60,9 @@ const _compile = (raw: Record<string, ClearUrlsProvider>): CompiledProvider[] =>
         rules: [...(p.rules ?? []), ...(p.referralMarketing ?? [])].map(
           (r) => new RegExp(`^${r}$`, "i"),
         ),
-        rawRules: (p.rawRules ?? []).map((r) => new RegExp(r, "i")),
+        // Global: a rawRule strips a pattern from the whole URL, and the same pattern can occur
+        // more than once. Without "g" only the first occurrence goes.
+        rawRules: (p.rawRules ?? []).map((r) => new RegExp(r, "gi")),
         exceptions: (p.exceptions ?? []).map((r) => new RegExp(r, "i")),
         redirections: (p.redirections ?? []).map((r) => new RegExp(r, "i")),
       });
@@ -195,7 +197,15 @@ export const applyClearUrls = (url: string): string => {
         if (p.rules.some((r) => r.test(key))) parsed.searchParams.delete(key);
       }
       for (const raw of p.rawRules) {
-        parsed = new URL(parsed.href.replace(raw, ""));
+        // A rawRule operates on the whole URL, so it can cut out something structural and leave a
+        // string that is no longer a URL. Keep the last valid value rather than throwing: an
+        // exception here would abandon cleaning for this result entirely.
+        const rewritten = parsed.href.replace(raw, "");
+        try {
+          parsed = new URL(rewritten);
+        } catch {
+          logger.debug("search", `clearurls: rawRule produced an invalid url, skipping it`);
+        }
       }
     }
     if (!redirected) return parsed.href;

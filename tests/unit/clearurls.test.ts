@@ -10,6 +10,14 @@ const RULES = {
     rules: ["utm_[^=]*", "ref_?src"],
     exceptions: ["^https?:\\/\\/(?:[a-z0-9-]+\\.)*?example\\.org"],
   },
+  rawy: {
+    urlPattern: "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?rawy\\.test",
+    rawRules: ["\\/tr\\/[a-z0-9]+"],
+  },
+  breaky: {
+    urlPattern: "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?breaky\\.test",
+    rawRules: ["^https?:\\/\\/"],
+  },
   amazon: {
     urlPattern: "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?amazon(?:\\.[a-z]{2,}){1,}",
     rules: ["pd_rd_[^=]*", "psc"],
@@ -49,6 +57,23 @@ describe("clearurls", () => {
     loadClearUrlsForTest(RULES);
     const url = "https://example.org/page?utm_source=news";
     expect(applyClearUrls(url)).toContain("utm_source=news");
+  });
+
+  test("a rawRule strips every occurrence, not only the first", () => {
+    loadClearUrlsForTest(RULES);
+    expect(applyClearUrls("https://rawy.test/a/tr/abc123/b/tr/def456/c")).toBe(
+      "https://rawy.test/a/b/c",
+    );
+  });
+
+  test("a rawRule that breaks the URL does not abandon cleaning", () => {
+    loadClearUrlsForTest(RULES);
+    const url = "https://breaky.test/page?utm_source=news";
+    // The scheme-stripping rawRule cannot produce a valid URL, so the last good value stands and the
+    // global utm_ rule still applies.
+    const out = applyClearUrls(url);
+    expect(out).toContain("breaky.test");
+    expect(out).not.toContain("utm_source");
   });
 
   test("leaves a URL with no matching rule untouched", () => {
