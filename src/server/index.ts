@@ -9,6 +9,7 @@ import { getLocale } from "./utils/hono";
 import { initPlugins } from "./extensions/commands/registry";
 import { initUovadipasquas } from "./extensions/uovadipasqua/registry";
 import { initEngines } from "./extensions/engines/registry";
+import { initClearUrls } from "./search/clearurls";
 import { initMiddlewareRegistry } from "./extensions/middleware/registry";
 import { initPluginRoutes } from "./extensions/plugin-routes/registry";
 import { initSearchBarActions } from "./extensions/search-bar/registry";
@@ -141,6 +142,11 @@ ${ANSI_GRAY}██████████████████████�
 
 await runMigrations();
 await initValkey(await getInstanceId());
+
+// Loads the cached ClearURLs ruleset and schedules its daily refresh. Deliberately not awaited: a
+// slow or unreachable rules host must not delay startup, and until it resolves cleanUrl still
+// applies the static tracking-parameter list.
+void initClearUrls();
 
 const initExtensionRegistries = async (): Promise<void> => {
   await Promise.all([
