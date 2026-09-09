@@ -53,6 +53,21 @@ describe("clearurls", () => {
     ).toBe("https://nixos.org/");
   });
 
+  test("refuses a redirect target that is not http or https", () => {
+    loadClearUrlsForTest(RULES);
+    for (const bad of [
+      "javascript%3Aalert(1)",
+      "data%3Atext%2Fhtml%2C%3Cscript%3Ealert(1)%3C%2Fscript%3E",
+      "file%3A%2F%2F%2Fetc%2Fpasswd",
+    ]) {
+      const out = applyClearUrls(`https://www.google.com/url?sa=t&url=${bad}`);
+      expect(out.startsWith("https://www.google.com/")).toBe(true);
+      expect(out).not.toContain("javascript:");
+      expect(out).not.toContain("data:");
+      expect(out).not.toContain("file:");
+    }
+  });
+
   test("honours provider exceptions", () => {
     loadClearUrlsForTest(RULES);
     const url = "https://example.org/page?utm_source=news";

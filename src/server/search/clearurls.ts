@@ -183,10 +183,23 @@ export const applyClearUrls = (url: string): string => {
       for (const r of p.redirections) {
         const m = current.match(r);
         if (m?.[1]) {
+          let candidate: string;
           try {
-            redirected = decodeURIComponent(m[1]);
+            candidate = decodeURIComponent(m[1]);
           } catch {
-            redirected = m[1];
+            candidate = m[1];
+          }
+          // A redirection rule pulls its target OUT of the URL, so the target is
+          // attacker-influenced: whoever controls the result controls what comes back. Restrict it
+          // to http and https before returning it. HTML escaping does not neutralise javascript: or
+          // data:, and not every render path funnels through the same link helper.
+          try {
+            const resolved = new URL(candidate, current);
+            if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+              redirected = resolved.href;
+            }
+          } catch {
+            // Not a URL. Leave the current value alone rather than unwrapping to something unusable.
           }
           break;
         }
