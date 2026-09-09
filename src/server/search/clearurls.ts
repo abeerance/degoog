@@ -48,6 +48,7 @@ let _timer: ReturnType<typeof setTimeout> | undefined;
 
 // ClearURLs anchors every rule as a whole-value match. Compiling once at load keeps the hot path to
 // a regex test per provider rather than a construction per URL.
+/** Compile the raw provider map into regexes once, so the hot path is a test per provider. */
 const _compile = (raw: Record<string, ClearUrlsProvider>): CompiledProvider[] => {
   const out: CompiledProvider[] = [];
   for (const [name, p] of Object.entries(raw)) {
@@ -74,6 +75,7 @@ const _compile = (raw: Record<string, ClearUrlsProvider>): CompiledProvider[] =>
   return out;
 };
 
+/** Parse and compile a downloaded ruleset, throwing if it is unusable or suspiciously small. */
 const _validate = (text: string): CompiledProvider[] => {
   const parsed = JSON.parse(text) as { providers?: Record<string, ClearUrlsProvider> };
   if (!parsed?.providers || typeof parsed.providers !== "object")
@@ -90,6 +92,7 @@ const _cacheFile = (): string => join(_cacheDir(), "data.min.json");
 const _metaFile = (): string => join(_cacheDir(), "meta.json");
 
 // rename(2) is atomic only within a filesystem, so the temp file is written beside its target.
+/** Write beside the target and rename over it, so a reader never sees a partial file. */
 async function _writeAtomic(path: string, text: string): Promise<void> {
   const tmp = `${path}.tmp`;
   const fh = await open(tmp, "w");
@@ -102,6 +105,7 @@ async function _writeAtomic(path: string, text: string): Promise<void> {
   await rename(tmp, path);
 }
 
+/** Fetch the ruleset, install it if the content hash changed, and keep the previous one on failure. */
 async function _refresh(): Promise<void> {
   let meta: { sha256?: string; fetchedAt?: number } = {};
   try {
