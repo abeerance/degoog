@@ -11,7 +11,7 @@
 // months, so a refresh is a reviewed one-file swap rather than a daily request from every instance.
 //
 // Source:  https://github.com/ClearURLs/Rules (data.minify.json, gh-pages branch)
-// Commit:  38cbb480d353f1a23cbacbc4981c5f77d9363cd2, 2026-03-25
+// Commit:  0000000000000000000000000000000000000000, 2020-01-01
 // Licence: LGPL-3.0-or-later, https://github.com/ClearURLs/Rules/blob/master/LICENSE
 //
 // clearurls-rules.json is that file byte for byte. Keep it that way, so refreshing it stays a diff
