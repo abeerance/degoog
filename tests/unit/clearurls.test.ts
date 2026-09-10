@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { applyClearUrls, loadClearUrlsForTest } from "../../src/server/search/clearurls";
 import { cleanUrl } from "../../src/server/search/url-normalize";
+import rulesData from "../../src/server/search/clearurls-rules.json";
 
 // A cut-down ruleset in the real ClearURLs shape, so these assert on rule SEMANTICS rather than on
 // whatever the live ruleset happens to contain today.
@@ -113,5 +114,17 @@ describe("clearurls", () => {
     loadClearUrlsForTest({});
     const url = "https://www.amazon.de/dp/B0TEST?pd_rd_w=abc";
     expect(applyClearUrls(url)).toBe(url);
+  });
+
+  // The vendored ruleset is not validated at runtime any more, because it is reviewed in a diff
+  // rather than downloaded. This is that check, moved to where a bad refresh gets caught instead.
+  // Reads the JSON directly, so it does not depend on which fixture a previous test left loaded.
+  test("the vendored ruleset is complete and every provider compiles", () => {
+    const providers = rulesData.providers as Record<string, { urlPattern?: string }>;
+    expect(Object.keys(providers).length).toBeGreaterThanOrEqual(100);
+    for (const p of Object.values(providers)) {
+      expect(typeof p.urlPattern).toBe("string");
+      expect(() => new RegExp(p.urlPattern as string, "i")).not.toThrow();
+    }
   });
 });
